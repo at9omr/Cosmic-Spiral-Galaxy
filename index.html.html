@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Cosmic Spiral Galaxy | 3D Interactive Space Visualization</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Arial', 'Segoe UI', sans-serif;
+        }
+        #info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: rgba(255,255,255,0.7);
+            background: rgba(0,0,0,0.5);
+            padding: 8px 15px;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+            pointer-events: none;
+            z-index: 10;
+            font-size: 12px;
+            letter-spacing: 1px;
+            font-weight: 300;
+        }
+        #interaction-hint {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: rgba(255,255,255,0.5);
+            background: rgba(0,0,0,0.3);
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            pointer-events: none;
+            font-family: monospace;
+            backdrop-filter: blur(4px);
+        }
+        .credit {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255,255,255,0.6);
+            background: rgba(0,0,0,0.4);
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-family: 'Segoe UI', monospace;
+            letter-spacing: 1px;
+            backdrop-filter: blur(4px);
+            pointer-events: none;
+            z-index: 10;
+            white-space: nowrap;
+        }
+        @media (max-width: 600px) {
+            #info, #interaction-hint, .credit { font-size: 8px; bottom: 10px; }
+            .credit { font-size: 8px; white-space: nowrap; }
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        ✦ COSMIC SPIRAL GALAXY ✦ | 3D Interactive Universe
+    </div>
+    <div id="interaction-hint">
+        🖱️ Drag mouse → rotate view | Click → create starburst / gravity pulse
+    </div>
+    <div class="credit">
+        Abdallah Khafagah
+    </div>
+
+    <!-- Import Three.js core and add-ons via CDN -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        
+        // --- Setup Scene, Camera, Renderer ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x010118); // deep cosmic void
+        scene.fog = new THREE.FogExp2(0x010118, 0.0003); // subtle fog for depth
+
+        // Camera: perspective, good field of view
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
+        camera.position.set(12, 6, 18);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.toneMapping = THREE.ReinhardToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        document.body.appendChild(renderer.domElement);
+
+        // --- Post Processing: Bloom (Glow) for ethereal lights ---
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.2, 0.4, 0.85);
+        bloomPass.threshold = 0.1;  // bloom intensity threshold
+        bloomPass.strength = 1.1;
+        bloomPass.radius = 0.8;
+        const effectComposer = new EffectComposer(renderer);
+        effectComposer.addPass(renderScene);
+        effectComposer.addPass(bloomPass);
+
+        // --- Enhanced Controls: Smooth interactive pan/rotate with auto-rotate optional but we use direct mouse for parallax feel
+        // Using OrbitControls with dynamic damping to achieve cinematic mouse-driven rotation.
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;          // smooth inertia
+        controls.dampingFactor = 0.05;
+        controls.rotateSpeed = 0.8;
+        controls.zoomSpeed = 1.0;
+        controls.panSpeed = 0.5;
+        controls.enableZoom = true;
+        controls.zoomSpeed = 0.8;
+        controls.enablePan = true;
+        controls.panSpeed = 0.5;
+        controls.autoRotate = false;
+        controls.target.set(0, 0, 0);
+        controls.maxPolarAngle = Math.PI / 1.8;
+        controls.minDistance = 5;
+        controls.maxDistance = 35;
+        
+        // --- Dynamic Lighting: Cinematic and vibrant ---
+        // Ambient soft light
+        const ambientLight = new THREE.AmbientLight(0x111122);
+        scene.add(ambientLight);
+        
+        // Central glow point light (core of galaxy)
+        const coreLight = new THREE.PointLight(0xff66aa, 1.2, 40);
+        coreLight.position.set(0, 0, 0);
+        scene.add(coreLight);
+        
+        // Additional colored lights to enhance nebula
+        const colorLight1 = new THREE.PointLight(0x44aaff, 0.6);
+        colorLight1.position.set(3, 2, 4);
+        scene.add(colorLight1);
+        
+        const colorLight2 = new THREE.PointLight(0xff44aa, 0.7);
+        colorLight2.position.set(-2, 1, -3);
+        scene.add(colorLight2);
+        
+        // Back rim light
+        const rimLight = new THREE.DirectionalLight(0x88aaff, 0.5);
+        rimLight.position.set(-2, 1, -5);
+        scene.add(rimLight);
+        
+        // Flickering dynamic light for extra life
+        const flickerLight = new THREE.PointLight(0xffaa66, 0.8);
+        flickerLight.position.set(0.5, 0.2, 1);
+        scene.add(flickerLight);
+        
+        // --- Starfield: thousands of twinkling stars (particle system with varying sizes & brightness) ---
+        const starCount = 5500;
+        const starGeometry = new THREE.BufferGeometry();
+        const starPositions = new Float32Array(starCount * 3);
+        const starColors = new Float32Array(starCount * 3);
+        const starSizes = new Float32Array(starCount);
+        
+        for (let i = 0; i < starCount; i++) {
+            // Distribute in a spherical volume but flatten a bit to mimic cosmos
+            const radius = 80 + Math.random() * 70;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            // more stars on galactic plane illusion: bias distribution
+            let x, y, z;
+            if (Math.random() > 0.3) {
+                // disc-like distribution
+                const r = 50 + Math.random() * 55;
+                const angle = Math.random() * Math.PI * 2;
+                x = Math.cos(angle) * r;
+                z = Math.sin(angle) * r;
+                y = (Math.random() - 0.5) * 12;
+            } else {
+                // outer halo stars
+                const r = 90 + Math.random() * 60;
+                const angle = Math.random() * Math.PI * 2;
+                x = Math.cos(angle) * r;
+                z = Math.sin(angle) * r;
+                y = (Math.random() - 0.5) * 25;
+            }
+            starPositions[i*3] = x;
+            starPositions[i*3+1] = y;
+            starPositions[i*3+2] = z;
+            
+            // Colors: white, pale blue, pale gold, occasional reddish
+            const colorChoice = Math.random();
+            let rCol, gCol, bCol;
+            if (colorChoice < 0.7) {
+                rCol = 0.9 + Math.random()*0.1;
+                gCol = 0.85 + Math.random()*0.15;
+                bCol = 0.8 + Math.random()*0.2;
+            } else if (colorChoice < 0.85) {
+                rCol = 0.6 + Math.random()*0.3;
+                gCol = 0.7 + Math.random()*0.3;
+                bCol = 1.0;
+            } else {
+                rCol = 1.0;
+                gCol = 0.5 + Math.random()*0.4;
+                bCol = 0.6 + Math.random()*0.3;
+            }
+            starColors[i*3] = rCol;
+            starColors[i*3+1] = gCol;
+            starColors[i*3+2] = bCol;
+            
+            // random size 0.08 to 0.45
+            starSizes[i] = 0.08 + Math.random() * 0.4;
+        }
+        starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+        starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+        starGeometry.setAttribute('size', new THREE.BufferAttribute(starSizes, 1));
+        
+        const starMaterial = new THREE.PointsMaterial({ size: 0.2, vertexColors: true, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending });
+        // Workaround for per-point size: use ShaderMaterial for variable sizes? Standard PointsMaterial doesn't support per-point size easily without shader.
+        // But for performance and simplicity, we'll keep uniform base size but multiple layers for variation. Better: custom shader for glitter.
+        // Actually let's implement a custom shader to use per-vertex size for stellar twinkling.
+        const starShaderMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                time: { value: 0 },
+                pointTexture: { value: createStarTexture() }
+            },
+            vertexShader: `
+                attribute float size;
+                attribute vec3 color;
+                varying vec3 vColor;
+                uniform float time;
+                void main() {
+                    vColor = color;
+                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                    // Twinkle factor based on sin of time + position
+                    float twinkle = 0.7 + 0.4 * sin(position.x * 0.2 + position.z * 0.3 + time * 2.5);
+                    gl_PointSize = size * ( 300.0 / ( - mvPosition.z ) ) * (0.8 + twinkle * 0.4);
+                    gl_PointSize = clamp(gl_PointSize, 0.2, 1.2);
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+            `,
+            fragmentShader: `
+                uniform sampler2D pointTexture;
+                varying vec3 vColor;
+                void main() {
+                    vec4 texColor = texture2D(pointTexture, gl_PointCoord);
+                    float alpha = texColor.a * 0.9;
+                    gl_FragColor = vec4(vColor, alpha);
+                }
+            `,
+            transparent: true,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
+        });
+        
+        function createStarTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 32;
+            canvas.height = 32;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(16, 16, 7, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.shadowBlur = 0;
+            ctx.beginPath();
+            ctx.arc(16, 16, 3, 0, 2 * Math.PI);
+            ctx.fillStyle = 'rgba(255,255,200,0.8)';
+            ctx.fill();
+            return new THREE.CanvasTexture(canvas);
+        }
+        
+        const starField = new THREE.Points(starGeometry, starShaderMaterial);
+        scene.add(starField);
+        
+        // --- Galaxy Spiral System: Using particle disc with logarithmic spiral arms ---
+        const galaxyParticleCount = 28000;
+        const galaxyGeo = new THREE.BufferGeometry();
+        const galaxyPositions = new Float32Array(galaxyParticleCount * 3);
+        const galaxyColorsArray = new Float32Array(galaxyParticleCount * 3);
+        
+        // Colors: deep magenta, cyan, purple, blue
+        for (let i = 0; i < galaxyParticleCount; i++) {
+            // Spiral arm generation: radius and angle with perturbation
+            const armCount = 4;
+            const radiusBase = Math.pow(Math.random(), 1.5) * 9.5; // dense inner core
+            let angleOffset = 0;
+            const armIndex = Math.floor(Math.random() * armCount);
+            angleOffset = (armIndex / armCount) * Math.PI * 2;
+            // Spiral shape: r = a * theta => theta = radius * spiralFactor
+            const spiralTightness = 0.85;
+            const spiralAngle = radiusBase * spiralTightness + angleOffset;
+            // random radial offset for dust clouds
+            const radialNoise = (Math.random() - 0.5) * 1.2;
+            const finalRadius = Math.max(0.2, radiusBase + radialNoise);
+            let angle = spiralAngle + (Math.random() - 0.5) * 0.7;
+            
+            // Additional random cloud particles (fill galactic halo)
+            let x, y, z;
+            if (Math.random() < 0.25) {
+                // background haze particles
+                const rHaze = 3 + Math.random() * 11;
+                const ang = Math.random() * Math.PI * 2;
+                x = Math.cos(ang) * rHaze;
+                z = Math.sin(ang) * rHaze;
+                y = (Math.random() - 0.5) * 2.2;
+            } else {
+                x = Math.cos(angle) * finalRadius;
+                z = Math.sin(angle) * finalRadius;
+                // Height thin disc with warp
+                y = Math.sin(angle * 2) * 0.25 * (finalRadius / 4) + (Math.random() - 0.5) * 0.4;
+                y *= (1 - finalRadius / 12) * 0.8;
+            }
+            
+            galaxyPositions[i*3] = x;
+            galaxyPositions[i*3+1] = y;
+            galaxyPositions[i*3+2] = z;
+            
+            // Color based on radius and random nebula hues
+            const t = finalRadius / 10;
+            let rCol, gCol, bCol;
+            if (finalRadius < 2.5) {
+                // hot core: orange to pink
+                rCol = 1.0;
+                gCol = 0.5 + Math.random()*0.4;
+                bCol = 0.7 + Math.random()*0.3;
+            } else if (finalRadius < 6) {
+                // spiral arms: blue to magenta
+                rCol = 0.6 + Math.random()*0.5;
+                gCol = 0.4 + Math.random()*0.5;
+                bCol = 0.9 + Math.random()*0.3;
+            } else {
+                // outer: cyan/purple
+                rCol = 0.5 + Math.random()*0.4;
+                gCol = 0.5 + Math.random()*0.5;
+                bCol = 0.8 + Math.random()*0.4;
+            }
+            // add variation
+            galaxyColorsArray[i*3] = rCol;
+            galaxyColorsArray[i*3+1] = gCol;
+            galaxyColorsArray[i*3+2] = bCol;
+        }
+        galaxyGeo.setAttribute('position', new THREE.BufferAttribute(galaxyPositions, 3));
+        galaxyGeo.setAttribute('color', new THREE.BufferAttribute(galaxyColorsArray, 3));
+        
+        const galaxyMaterial = new THREE.PointsMaterial({ size: 0.08, vertexColors: true, blending: THREE.AdditiveBlending, transparent: true, opacity: 0.9 });
+        const galaxyPoints = new THREE.Points(galaxyGeo, galaxyMaterial);
+        scene.add(galaxyPoints);
+        
+        // --- Nebula Cloud Effect: Using several transparent sprite planes or particle clouds.
+        // Create volumetric clouds using multiple particle clusters with larger sprites
+        const cloudCount = 1800;
+        const cloudGeo = new THREE.BufferGeometry();
+        const cloudPositions = new Float32Array(cloudCount * 3);
+        const cloudColorsNeb = new Float32Array(cloudCount * 3);
+        for (let i = 0; i < cloudCount; i++) {
+            // Dense nebula regions around spiral arms
+            const rad = 3 + Math.random() * 8;
+            const ang = Math.random() * Math.PI * 2;
+            const armWave = Math.sin(rad * 1.2) * 0.8;
+            const xOff = Math.cos(ang + armWave) * rad;
+            const zOff = Math.sin(ang + armWave) * rad;
+            const yOff = (Math.random() - 0.5) * 1.2;
+            cloudPositions[i*3] = xOff + (Math.random() - 0.5) * 1.2;
+            cloudPositions[i*3+1] = yOff + (Math.sin(rad * 2) * 0.3);
+            cloudPositions[i*3+2] = zOff + (Math.random() - 0.5) * 1.2;
+            
+            // purples, magentas, deep blues
+            const purpleHue = 0.6 + Math.random() * 0.4;
+            cloudColorsNeb[i*3] = 0.5 + Math.random() * 0.5;
+            cloudColorsNeb[i*3+1] = 0.3 + Math.random() * 0.5;
+            cloudColorsNeb[i*3+2] = 0.7 + Math.random() * 0.3;
+        }
+        cloudGeo.setAttribute('position', new THREE.BufferAttribute(cloudPositions, 3));
+        cloudGeo.setAttribute('color', new THREE.BufferAttribute(cloudColorsNeb, 3));
+        const cloudMat = new THREE.PointsMaterial({ size: 0.22, vertexColors: true, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending });
+        const nebulaClouds = new THREE.Points(cloudGeo, cloudMat);
+        scene.add(nebulaClouds);
+        
+        // Add central glowing core sphere (galactic nucleus)
+        const coreGlowMat = new THREE.MeshStandardMaterial({ color: 0xff66aa, emissive: 0xaa3377, emissiveIntensity: 1.2, roughness: 0.2, metalness: 0.8 });
+        const coreSphere = new THREE.Mesh(new THREE.SphereGeometry(0.85, 32, 32), coreGlowMat);
+        scene.add(coreSphere);
+        
+        // Additional glowing lens flare effect using point sprites
+        const lensSpriteMat = new THREE.SpriteMaterial({ map: createGlowTexture(), color: 0xff88cc, blending: THREE.AdditiveBlending });
+        const lensSprite = new THREE.Sprite(lensSpriteMat);
+        lensSprite.scale.set(1.2, 1.2, 1);
+        scene.add(lensSprite);
+        
+        function createGlowTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(32, 32, 24, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.shadowBlur = 0;
+            ctx.beginPath();
+            ctx.arc(32, 32, 12, 0, 2 * Math.PI);
+            ctx.fillStyle = 'rgba(255,200,200,1)';
+            ctx.fill();
+            return new THREE.CanvasTexture(canvas);
+        }
+        
+        // --- Mouse Click interaction: Dynamic Gravity Well / Starburst Effect (pulse) ---
+        // Create temporary particle explosion that pushes away or attracts nearby dust.
+        // We'll store an array of burst particles and animate them.
+        let burstSystem = [];
+        
+        function createStarburstEffect(position3D) {
+            // Spawn 250 energetic particles that radiate outward, simulating a gravity pulse / supernova burst
+            const burstCount = 300;
+            const burstGroup = [];
+            for (let i = 0; i < burstCount; i++) {
+                const direction = new THREE.Vector3(
+                    (Math.random() - 0.5) * 2,
+                    (Math.random() - 0.5) * 2,
+                    (Math.random() - 0.5) * 2
+                ).normalize();
+                const velocity = direction.multiplyScalar(0.8 + Math.random() * 1.5);
+                const life = 0.8 + Math.random() * 0.8;
+                const color = new THREE.Color().setHSL(0.55 + Math.random() * 0.25, 1.0, 0.6);
+                burstGroup.push({
+                    pos: position3D.clone(),
+                    vel: velocity,
+                    life: life,
+                    maxLife: life,
+                    color: color,
+                    size: 0.12 + Math.random() * 0.2
+                });
+            }
+            burstSystem.push(...burstGroup);
+            
+            // Also briefly increase bloom strength for dramatic effect
+            bloomPass.strength = 1.5;
+            setTimeout(() => {
+                bloomPass.strength = 1.1;
+            }, 200);
+            
+            // Slight camera shake effect (optional minimal)
+        }
+        
+        // Raycaster to get click position in 3D space (intersect with galactic plane)
+        const raycaster = new THREE.Raycaster();
+        const planeZ = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        
+        window.addEventListener('click', (event) => {
+            // convert mouse to 3D direction
+            const mouse = new THREE.Vector2();
+            mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
+            mouse.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            // Intersect with galaxy plane y~0
+            const targetPoint = new THREE.Vector3();
+            if (raycaster.ray.intersectPlane(planeZ, targetPoint)) {
+                // Clamp distance
+                if (targetPoint.length() < 14) {
+                    createStarburstEffect(targetPoint);
+                } else {
+                    // else create in direction but within reasonable radius
+                    const dir = targetPoint.clone().normalize().multiplyScalar(9);
+                    createStarburstEffect(dir);
+                }
+            } else {
+                // fallback: create near camera look direction at distance 8
+                const dir = raycaster.ray.direction.clone().multiplyScalar(10);
+                const pos = camera.position.clone().add(dir);
+                createStarburstEffect(pos);
+            }
+        });
+        
+        // --- Animation: Twinkling stars, flickering lights, burst particles ---
+        let clock = new THREE.Clock();
+        
+        // Also animate galaxy rotation slowly for cosmic motion
+        let galaxyRotationAngle = 0;
+        
+        function animateBursts() {
+            for (let i = burstSystem.length-1; i >= 0; i--) {
+                const p = burstSystem[i];
+                p.life -= 0.025;
+                if (p.life <= 0) {
+                    burstSystem.splice(i,1);
+                    continue;
+                }
+                p.pos.x += p.vel.x * 0.08;
+                p.pos.y += p.vel.y * 0.06;
+                p.pos.z += p.vel.z * 0.08;
+                // gravity decay effect: slow down
+                p.vel.multiplyScalar(0.98);
+            }
+        }
+        
+        // Use Points for burst rendering
+        const burstGeometry = new THREE.BufferGeometry();
+        const burstMaterial = new THREE.PointsMaterial({ color: 0xffaa88, size: 0.15, blending: THREE.AdditiveBlending, vertexColors: true });
+        const burstPointsObj = new THREE.Points(burstGeometry, burstMaterial);
+        scene.add(burstPointsObj);
+        
+        function updateBurstVisual() {
+            const positions = [];
+            const colors = [];
+            for (let p of burstSystem) {
+                positions.push(p.pos.x, p.pos.y, p.pos.z);
+                const intensity = p.life / p.maxLife;
+                const col = p.color.clone().multiplyScalar(0.8 + intensity*0.5);
+                colors.push(col.r, col.g, col.b);
+            }
+            const posAttr = new THREE.BufferAttribute(new Float32Array(positions), 3);
+            const colAttr = new THREE.BufferAttribute(new Float32Array(colors), 3);
+            burstGeometry.setAttribute('position', posAttr);
+            burstGeometry.setAttribute('color', colAttr);
+            burstGeometry.setDrawRange(0, burstSystem.length);
+        }
+        
+        // Additional star twinkle time uniform
+        let starTwinkleTime = 0;
+        
+        // Rotating the galaxy and nebula clouds for subtle dynamic feel
+        function animateGalaxy() {
+            galaxyRotationAngle += 0.0008;
+            galaxyPoints.rotation.y = galaxyRotationAngle * 0.3;
+            nebulaClouds.rotation.y = galaxyRotationAngle * 0.2;
+            starField.rotation.y += 0.0001;
+            starField.rotation.x += 0.00005;
+        }
+        
+        // Animate flicker light
+        let flickerT = 0;
+        
+        function render() {
+            const delta = clock.getDelta();
+            const elapsedTime = performance.now() / 1000;
+            starTwinkleTime = elapsedTime;
+            if (starShaderMaterial.uniforms) starShaderMaterial.uniforms.time.value = elapsedTime;
+            
+            // Flicker light heartbeat
+            flickerT += 0.02;
+            const flickIntensity = 0.7 + Math.sin(flickerT * 4) * 0.3;
+            flickerLight.intensity = 0.6 + Math.sin(flickerT * 7) * 0.25;
+            coreLight.intensity = 1.0 + Math.sin(elapsedTime * 1.8) * 0.15;
+            
+            // rotate dynamic lights slightly
+            colorLight1.position.x = 3 + Math.sin(elapsedTime * 0.5) * 0.8;
+            colorLight2.position.z = -3 + Math.cos(elapsedTime * 0.7) * 0.9;
+            
+            // burst update
+            animateBursts();
+            updateBurstVisual();
+            animateGalaxy();
+            
+            // Update controls and render via effect composer
+            controls.update(); // updates camera target damping
+            effectComposer.render();
+            
+            requestAnimationFrame(render);
+        }
+        
+        // handle responsiveness
+        window.addEventListener('resize', onWindowResize, false);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            effectComposer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        // Start experience
+        render();
+        
+        // Some initial star sparkles
+        console.log('Cosmic Visualization Active | Drag to Explore | Click to create Starburst');
+    </script>
+</body>
+</html>
